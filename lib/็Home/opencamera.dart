@@ -94,7 +94,7 @@ class _CameraAppState extends State<CameraApp> {
         metadata: InputImageMetadata(
           size: Size(image.width.toDouble(), image.height.toDouble()),
           rotation: rotation,
-          format: InputImageFormat.nv21, // ✅ ใช้ YUV420
+          format: InputImageFormat.nv21,
           bytesPerRow: image.planes[0].bytesPerRow,
         ),
       );
@@ -112,7 +112,7 @@ class _CameraAppState extends State<CameraApp> {
       });
     } catch (e) {
       setState(() {
-        textStatus = "เกิดข้อผิดพลาดในการตรวจจับวัตถุ: $e";
+        textStatus = "เกิดข้อผิดพลาดในการตรวจจับวัตถุ : $e";
       });
     }
   }

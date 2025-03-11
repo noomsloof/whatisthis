@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
+import 'dart:typed_data';
 
 class CameraApp extends StatefulWidget {
   @override
@@ -44,7 +45,11 @@ class _CameraAppState extends State<CameraApp> {
       return;
     }
 
-    _controller = CameraController(cameras![0], ResolutionPreset.high);
+    _controller = CameraController(
+      cameras![0],
+      ResolutionPreset.high,
+      imageFormatGroup: ImageFormatGroup.yuv420,
+    );
 
     try {
       await _controller!.initialize();
@@ -73,13 +78,23 @@ class _CameraAppState extends State<CameraApp> {
           InputImageRotationValue.fromRawValue(
             _controller!.description.sensorOrientation,
           )!;
+      // แปลง CameraImage เป็น Uint8List
 
+      Uint8List convertYUV420ToUint8List(CameraImage image) {
+        List<int> allBytes = [];
+        for (var plane in image.planes) {
+          allBytes.addAll(plane.bytes);
+        }
+        return Uint8List.fromList(allBytes);
+      }
+
+      final Uint8List imageBytes = convertYUV420ToUint8List(image);
       final InputImage inputImage = InputImage.fromBytes(
-        bytes: image.planes[0].bytes,
+        bytes: imageBytes,
         metadata: InputImageMetadata(
           size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: rotation, // ใช้ rotation ที่ได้จาก sensorOrientation
-          format: InputImageFormat.yuv420,
+          rotation: rotation,
+          format: InputImageFormat.nv21, // ✅ ใช้ YUV420
           bytesPerRow: image.planes[0].bytesPerRow,
         ),
       );
@@ -90,12 +105,9 @@ class _CameraAppState extends State<CameraApp> {
 
       setState(() {
         if (objects.isNotEmpty) {
-          textStatus =
-              "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => e.text).join(", ")).join(", ")}";
-          print("พบวัตถุ");
+          textStatus = "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => "${e.text} (${e.confidence.toStringAsFixed(2)})").join(", ")).join(", ")}";
         } else {
           textStatus = "ไม่พบวัตถุ";
-          print("ไม่พบวัตถุ");
         }
       });
     } catch (e) {
@@ -116,7 +128,7 @@ class _CameraAppState extends State<CameraApp> {
       body: Column(
         children: [
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
+            // height: MediaQuery.of(context).size.height * 0.6,
             child: CameraPreview(_controller!),
           ),
           Padding(

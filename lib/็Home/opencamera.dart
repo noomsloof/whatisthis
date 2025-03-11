@@ -27,6 +27,14 @@ class _CameraAppState extends State<CameraApp> {
     _initCamera();
   }
 
+  @override
+  void dispose() {
+    _controller?.stopImageStream();
+    _controller?.dispose();
+    _objectDetector.close();
+    super.dispose();
+  }
+
   Future<void> _initCamera() async {
     cameras = await availableCameras();
     if (cameras == null || cameras!.isEmpty) {
@@ -36,7 +44,7 @@ class _CameraAppState extends State<CameraApp> {
       return;
     }
 
-    _controller = CameraController(cameras![0], ResolutionPreset.medium);
+    _controller = CameraController(cameras![0], ResolutionPreset.high);
 
     try {
       await _controller!.initialize();
@@ -60,36 +68,42 @@ class _CameraAppState extends State<CameraApp> {
   }
 
   Future<void> _detectObjects(CameraImage image) async {
-  try {
-    final InputImageRotation rotation = InputImageRotationValue.fromRawValue(_controller!.description.sensorOrientation)!;
-    
-    final InputImage inputImage = InputImage.fromBytes(
-      bytes: image.planes[0].bytes,
-      metadata: InputImageMetadata(
-        size: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: rotation,  // ใช้ rotation ที่ได้จาก sensorOrientation
-        format: InputImageFormat.nv21,
-        bytesPerRow: image.planes[0].bytesPerRow,
-      ),
-    );
+    try {
+      final InputImageRotation rotation =
+          InputImageRotationValue.fromRawValue(
+            _controller!.description.sensorOrientation,
+          )!;
 
-    final List<DetectedObject> objects = await _objectDetector.processImage(inputImage);
+      final InputImage inputImage = InputImage.fromBytes(
+        bytes: image.planes[0].bytes,
+        metadata: InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: rotation, // ใช้ rotation ที่ได้จาก sensorOrientation
+          format: InputImageFormat.yuv420,
+          bytesPerRow: image.planes[0].bytesPerRow,
+        ),
+      );
 
-    setState(() {
-      if (objects.isNotEmpty) {
-        textStatus = "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => e.text).join(", ")).join(", ")}";
-        print("พบวัตถุ");
-      } else {
-        textStatus = "ไม่พบวัตถุ";
-        print("ไม่พบวัตถุ");
-      }
-    });
-  } catch (e) {
-    setState(() {
-      textStatus = "เกิดข้อผิดพลาดในการตรวจจับวัตถุ: $e";
-    });
+      final List<DetectedObject> objects = await _objectDetector.processImage(
+        inputImage,
+      );
+
+      setState(() {
+        if (objects.isNotEmpty) {
+          textStatus =
+              "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => e.text).join(", ")).join(", ")}";
+          print("พบวัตถุ");
+        } else {
+          textStatus = "ไม่พบวัตถุ";
+          print("ไม่พบวัตถุ");
+        }
+      });
+    } catch (e) {
+      setState(() {
+        textStatus = "เกิดข้อผิดพลาดในการตรวจจับวัตถุ: $e";
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +115,15 @@ class _CameraAppState extends State<CameraApp> {
       appBar: AppBar(title: Text('กล้อง')),
       body: Column(
         children: [
-          CameraPreview(_controller!),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: CameraPreview(_controller!),
+          ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
               textStatus,
-              style: TextStyle(fontSize: 20, color: Colors.black),
+              style: TextStyle(fontSize: 10, color: Colors.black),
             ),
           ),
         ],

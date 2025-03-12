@@ -3,6 +3,8 @@ import 'package:camera/camera.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'dart:typed_data';
 
+import 'package:whatisthis/%E0%B9%87Home/detectionPainter.dart';
+
 class CameraApp extends StatefulWidget {
   @override
   _CameraAppState createState() => _CameraAppState();
@@ -11,6 +13,10 @@ class CameraApp extends StatefulWidget {
 class _CameraAppState extends State<CameraApp> {
   CameraController? _controller;
   List<CameraDescription>? cameras;
+
+  List<DetectedObject> detectedObjects = [];
+  Size cameraSize = Size(1, 1);
+
   bool _isDetecting = false;
   final ObjectDetector _objectDetector = ObjectDetector(
     options: ObjectDetectorOptions(
@@ -78,7 +84,6 @@ class _CameraAppState extends State<CameraApp> {
           InputImageRotationValue.fromRawValue(
             _controller!.description.sensorOrientation,
           )!;
-      // แปลง CameraImage เป็น Uint8List
 
       Uint8List convertYUV420ToUint8List(CameraImage image) {
         List<int> allBytes = [];
@@ -87,6 +92,8 @@ class _CameraAppState extends State<CameraApp> {
         }
         return Uint8List.fromList(allBytes);
       }
+
+      // final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
 
       final Uint8List imageBytes = convertYUV420ToUint8List(image);
       final InputImage inputImage = InputImage.fromBytes(
@@ -103,9 +110,15 @@ class _CameraAppState extends State<CameraApp> {
         inputImage,
       );
 
+    //   for (var obj in objects) {
+    //   print("🔍 วัตถุที่ตรวจจับ: ${obj.boundingBox}");
+    // }
+
       setState(() {
         if (objects.isNotEmpty) {
-          textStatus = "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => "${e.text} (${e.confidence.toStringAsFixed(2)})").join(", ")).join(", ")}";
+          detectedObjects = objects;
+          textStatus =
+              "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => "${e.text} (${e.confidence.toStringAsFixed(2)})").join(", ")).join(", ")}";
         } else {
           textStatus = "ไม่พบวัตถุ";
         }
@@ -123,19 +136,48 @@ class _CameraAppState extends State<CameraApp> {
       return Center(child: CircularProgressIndicator());
     }
 
+    // return Scaffold(
+    //   appBar: AppBar(title: Text('กล้อง')),
+    //   body: Column(
+    //     children: [
+    //       SizedBox(
+    //         // height: MediaQuery.of(context).size.height * 0.6,
+    //         child: CameraPreview(_controller!),
+    //       ),
+    //       Padding(
+    //         padding: const EdgeInsets.all(16.0),
+    //         child: Text(
+    //           textStatus,
+    //           style: TextStyle(fontSize: 10, color: Colors.black),
+    //         ),
+    //       ),
+    //     ],
+    //   ),
+    // );
+
     return Scaffold(
       appBar: AppBar(title: Text('กล้อง')),
-      body: Column(
+      body: Stack(
         children: [
-          SizedBox(
-            // height: MediaQuery.of(context).size.height * 0.6,
-            child: CameraPreview(_controller!),
+          CameraPreview(_controller!), // กล้อง
+          Positioned.fill(
+            child: AspectRatio(
+              aspectRatio: _controller!.value.aspectRatio,
+              child: CustomPaint(
+                painter: DetectionPainter(detectedObjects, cameraSize),
+              ),
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          Positioned(
+            bottom: 16,
+            left: 16,
             child: Text(
               textStatus,
-              style: TextStyle(fontSize: 10, color: Colors.black),
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+                backgroundColor: Colors.black54,
+              ),
             ),
           ),
         ],

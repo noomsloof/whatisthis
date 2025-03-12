@@ -3,8 +3,6 @@ import 'package:camera/camera.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'dart:typed_data';
 
-import 'package:whatisthis/%E0%B9%87Home/detectionPainter.dart';
-
 class CameraApp extends StatefulWidget {
   @override
   _CameraAppState createState() => _CameraAppState();
@@ -13,9 +11,6 @@ class CameraApp extends StatefulWidget {
 class _CameraAppState extends State<CameraApp> {
   CameraController? _controller;
   List<CameraDescription>? cameras;
-
-  List<DetectedObject> detectedObjects = [];
-  Size cameraSize = Size(1, 1);
 
   bool _isDetecting = false;
   final ObjectDetector _objectDetector = ObjectDetector(
@@ -79,6 +74,8 @@ class _CameraAppState extends State<CameraApp> {
   }
 
   Future<void> _detectObjects(CameraImage image) async {
+    DateTime now = DateTime.now();
+
     try {
       final InputImageRotation rotation =
           InputImageRotationValue.fromRawValue(
@@ -110,13 +107,12 @@ class _CameraAppState extends State<CameraApp> {
         inputImage,
       );
 
-    //   for (var obj in objects) {
-    //   print("🔍 วัตถุที่ตรวจจับ: ${obj.boundingBox}");
-    // }
+      //   for (var obj in objects) {
+      //   print("🔍 วัตถุที่ตรวจจับ: ${obj.boundingBox}");
+      // }
 
       setState(() {
         if (objects.isNotEmpty) {
-          detectedObjects = objects;
           textStatus =
               "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => "${e.text} (${e.confidence.toStringAsFixed(2)})").join(", ")).join(", ")}";
         } else {
@@ -136,48 +132,19 @@ class _CameraAppState extends State<CameraApp> {
       return Center(child: CircularProgressIndicator());
     }
 
-    // return Scaffold(
-    //   appBar: AppBar(title: Text('กล้อง')),
-    //   body: Column(
-    //     children: [
-    //       SizedBox(
-    //         // height: MediaQuery.of(context).size.height * 0.6,
-    //         child: CameraPreview(_controller!),
-    //       ),
-    //       Padding(
-    //         padding: const EdgeInsets.all(16.0),
-    //         child: Text(
-    //           textStatus,
-    //           style: TextStyle(fontSize: 10, color: Colors.black),
-    //         ),
-    //       ),
-    //     ],
-    //   ),
-    // );
-
     return Scaffold(
       appBar: AppBar(title: Text('กล้อง')),
-      body: Stack(
+      body: Column(
         children: [
-          CameraPreview(_controller!), // กล้อง
-          Positioned.fill(
-            child: AspectRatio(
-              aspectRatio: _controller!.value.aspectRatio,
-              child: CustomPaint(
-                painter: DetectionPainter(detectedObjects, cameraSize),
-              ),
-            ),
+          SizedBox(
+            // height: MediaQuery.of(context).size.height * 0.6,
+            child: CameraPreview(_controller!),
           ),
-          Positioned(
-            bottom: 16,
-            left: 16,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               textStatus,
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-                backgroundColor: Colors.black54,
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.black),
             ),
           ),
         ],

@@ -70,12 +70,10 @@ class _CameraAppState extends State<CameraApp> {
       }
     });
 
-    setState(() {});
+    // setState(() {});
   }
 
   Future<void> _detectObjects(CameraImage image) async {
-    DateTime now = DateTime.now();
-
     try {
       final InputImageRotation rotation =
           InputImageRotationValue.fromRawValue(
@@ -89,8 +87,6 @@ class _CameraAppState extends State<CameraApp> {
         }
         return Uint8List.fromList(allBytes);
       }
-
-      // final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
 
       final Uint8List imageBytes = convertYUV420ToUint8List(image);
       final InputImage inputImage = InputImage.fromBytes(
@@ -107,22 +103,22 @@ class _CameraAppState extends State<CameraApp> {
         inputImage,
       );
 
-      //   for (var obj in objects) {
-      //   print("🔍 วัตถุที่ตรวจจับ: ${obj.boundingBox}");
-      // }
-
-      setState(() {
-        if (objects.isNotEmpty) {
-          textStatus =
-              "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => "${e.text} (${e.confidence.toStringAsFixed(2)})").join(", ")).join(", ")}";
-        } else {
-          textStatus = "ไม่พบวัตถุ";
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (objects.isNotEmpty) {
+            textStatus =
+                "พบวัตถุ: ${objects.map((e) => e.labels.map((e) => "${e.text} (${e.confidence.toStringAsFixed(2)})").join(", ")).join(", ")}";
+          } else {
+            textStatus = "ไม่พบวัตถุ";
+          }
+        });
+      }
     } catch (e) {
-      setState(() {
-        textStatus = "เกิดข้อผิดพลาดในการตรวจจับวัตถุ : $e";
-      });
+      if (mounted) {
+        setState(() {
+          textStatus = "เกิดข้อผิดพลาดในการตรวจจับวัตถุ : $e";
+        });
+      }
     }
   }
 

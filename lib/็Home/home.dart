@@ -25,16 +25,15 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('What is This')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => CameraApp()),
-            );
-          },
-          child: Text("Open Camera"),
-        ),
+      body: Center(child: Text("กล้อง Detact วัตถุ โดยใช้ Google MLKit")),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.camera_alt),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CameraApp()),
+          );
+        },
       ),
     );
   }
